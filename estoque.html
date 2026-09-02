@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETAPIX - Sistema de Estoque de Chapas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-600 text-white p-2.5 rounded-xl shadow-lg">
+                    <i class="fa-solid fa-layer-group text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">ETAPIX Estoque</h1>
+                    <p class="text-xs text-slate-400">Controle Industrial de MDP, MDF e HDF com Gestão de Cargas e Etiquetas</p>
+                </div>
+            </div>
+            <nav class="flex flex-wrap gap-2">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="px-4 py-2 text-sm font-medium rounded-lg bg-amber-600 text-white transition shadow-sm hover:bg-amber-500">
+                    <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
+                </button>
+                <button onclick="switchTab('inventory')" id="btn-inventory" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-700 text-slate-300 transition hover:bg-slate-600">
+                    <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Estoque Atual
+                </button>
+                <button onclick="switchTab('entry')" id="btn-entry" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-700 text-slate-300 transition hover:bg-slate-600">
+                    <i class="fa-solid fa-truck-ramp-box mr-1.5"></i> Entrada de Carga
+                </button>
+                <button onclick="switchTab('labels')" id="btn-labels" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-700 text-slate-300 transition hover:bg-slate-600">
+                    <i class="fa-solid fa-barcode mr-1.5"></i> Central de Etiquetas
+                </button>
+                <button onclick="switchTab('output')" id="btn-output" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-700 text-slate-300 transition hover:bg-slate-600">
+                    <i class="fa-solid fa-industry mr-1.5"></i> Saída p/ Máquinas
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6">
+        
+        <!-- ================= TAB: DASHBOARD ================= -->
+        <section id="tab-dashboard" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase tracking-wider font-semibold text-slate-400">Total em Estoque</p>
+                            <h3 id="stat-total-plates" class="text-3xl font-extrabold text-white mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl"><i class="fa-solid fa-cube text-xl"></i></div>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-400 flex items-center gap-1">
+                        <span class="text-blue-400 font-medium">Chapas inteiras e pacotes</span> ativos
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase tracking-wider font-semibold text-slate-400">MDP / MDF / HDF</p>
+                            <h3 id="stat-types-count" class="text-3xl font-extrabold text-white mt-1">0 / 0 / 0</h3>
+                        </div>
+                        <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl"><i class="fa-solid fa-layer-group text-xl"></i></div>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-400">Categorias cadastradas</div>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase tracking-wider font-semibold text-slate-400">Etiquetas Geradas</p>
+                            <h3 id="stat-total-labels" class="text-3xl font-extrabold text-white mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><i class="fa-solid fa-tags text-xl"></i></div>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-400">Prontas para impressão</div>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase tracking-wider font-semibold text-slate-400">Saídas p/ Máquinas</p>
+                            <h3 id="stat-total-outputs" class="text-3xl font-extrabold text-white mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl"><i class="fa-solid fa-share-nodes text-xl"></i></div>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-400">Total de requisições</div>
+                </div>
+            </div>
+
+            <!-- Quick Action Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="p-2.5 bg-amber-600 text-white rounded-lg"><i class="fa-solid fa-truck-ramp-box"></i></div>
+                            <h2 class="text-lg font-bold text-white">Recebimento de Carga por Pacote</h2>
+                        </div>
+                        <p class="text-slate-400 text-sm">Cadastre novas cargas, escolha o tamanho padrão, se é CRU ou Com Cor, defina a quantidade por pacote (40 a 60) e gere as etiquetas.</p>
+                    </div>
+                    <button onclick="switchTab('entry')" class="mt-6 w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-xl transition text-sm shadow-sm">
+                        Registrar Nova Carga
+                    </button>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="p-2.5 bg-indigo-600 text-white rounded-lg"><i class="fa-solid fa-industry"></i></div>
+                            <h2 class="text-lg font-bold text-white">Baixa p/ Máquinas (Naxing, Prismatic, Giben)</h2>
+                        </div>
+                        <p class="text-slate-400 text-sm">Bipe ou selecione a etiqueta do pacote para dar baixa imediata para Corte Naxing, Prismatic ou Giben Nova.</p>
+                    </div>
+                    <button onclick="switchTab('output')" class="mt-6 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl transition text-sm shadow-sm">
+                        Dar Saída para Máquina
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Logs Table -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6">
+                <h3 class="text-base font-bold text-white mb-4"><i class="fa-solid fa-clock-rotate-left mr-2 text-amber-500"></i>Últimas Movimentações</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-700/50 text-slate-400 uppercase text-xs">
+                            <tr>
+                                <th class="p-3 rounded-l-lg">Data/Hora</th>
+                                <th class="p-3">Tipo</th>
+                                <th class="p-3">Material & Detalhes</th>
+                                <th class="p-3">Qtd</th>
+                                <th class="p-3 rounded-r-lg">Destino / Detalhe</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-logs-tbody" class="divide-y divide-slate-700/50">
+                            <tr><td colspan="5" class="p-4 text-center text-slate-500">Nenhuma movimentação registrada ainda.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB: INVENTORY ================= -->
+        <section id="tab-inventory" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <div class="relative flex-grow sm:w-64">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
+                        <input type="text" id="search-inventory" oninput="renderInventory()" placeholder="Buscar por código, cor, nome..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                    <select id="filter-type" onchange="renderInventory()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                        <option value="">Todos os Tipos (MDP/MDF/HDF)</option>
+                        <option value="MDP">MDP</option>
+                        <option value="MDF">MDF</option>
+                        <option value="HDF">HDF</option>
+                    </select>
+                </div>
+                <button onclick="openCustomPlateModal()" class="w-full sm:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-xl text-sm transition shadow-sm">
+                    <i class="fa-solid fa-plus mr-1.5"></i> Adicionar Pacote Avulso
+                </button>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-700/50 text-slate-400 uppercase text-xs">
+                            <tr>
+                                <th class="p-3 rounded-l-lg">ID / Pacote</th>
+                                <th class="p-3">Tipo & Acabamento</th>
+                                <th class="p-3">Nome / Cor</th>
+                                <th class="p-3">Dimensões (mm)</th>
+                                <th class="p-3">Qtd no Pacote</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-right rounded-r-lg">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody" class="divide-y divide-slate-700/50">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB: ENTRY (CARGA) ================= -->
+        <section id="tab-entry" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-3xl mx-auto shadow-sm">
+                <div class="flex items-center gap-3 mb-6 border-b border-slate-700 pb-4">
+                    <div class="p-3 bg-amber-600/10 text-amber-500 rounded-xl"><i class="fa-solid fa-truck-ramp-box text-xl"></i></div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Registro de Entrada de Carga por Pacotes</h2>
+                        <p class="text-xs text-slate-400">Informe os dados da carga, selecione o tamanho exato, acabamento e escolha manualmente quantas chapas vão em cada pacote (de 40 a 60).</p>
+                    </div>
+                </div>
+
+                <form id="form-entry" onsubmit="handleCargaEntry(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Painel *</label>
+                            <select id="entry-type" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                                <option value="MDP">MDP</option>
+                                <option value="MDF" selected>MDF</option>
+                                <option value="HDF">HDF</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Acabamento *</label>
+                            <select id="entry-finish" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                                <option value="Com Cor" selected>Com Cor / Revestido</option>
+                                <option value="CRU">CRU</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Nome / Cor / Padrão *</label>
+                            <input type="text" id="entry-name" required placeholder="Ex: Branco TX, Louro Freijó..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Dimensões Padrão *</label>
+                            <select id="entry-dims" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                                <option value="2750 x 1850 x 12mm">2750 x 1850 x 12 mm</option>
+                                <option value="2750 x 2200 x 12mm">2750 x 2200 x 12 mm</option>
+                                <option value="2750 x 1850 x 15mm" selected>2750 x 1850 x 15 mm</option>
+                                <option value="2750 x 2200 x 15mm">2750 x 2200 x 15 mm</option>
+                                <option value="2750 x 1850 x 2.5mm">2750 x 1850 x 2,5 mm</option>
+                                <option value="2750 x 2130 x 2.5mm">2750 x 2130 x 2,5 mm</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Qtd de Chapas por Pacote (40 a 60) *</label>
+                            <select id="entry-pack-size" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 font-bold text-amber-400">
+                                <!-- Preenchido via JS de 40 a 60 -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Total Geral de Chapas na Carga *</label>
+                            <input type="number" id="entry-total-qty" required min="1" value="400" placeholder="Ex: 400" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Nota Fiscal / Fornecedor / Lote</label>
+                            <input type="text" id="entry-invoice" placeholder="Ex: NF-9921 - Fornecedor X" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end gap-3">
+                        <button type="submit" class="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded-xl transition text-sm shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-barcode"></i> Registrar Carga & Gerar Etiquetas por Pacote
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ================= TAB: LABELS (ETIQUETAS) ================= -->
+        <section id="tab-labels" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800 border border-slate-700 p-4 rounded-2xl no-print">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-emerald-600 text-white rounded-xl"><i class="fa-solid fa-tags"></i></div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">Central de Etiquetas e Códigos de Barras por Pacote</h2>
+                        <p class="text-xs text-slate-400">Visualize e imprima as etiquetas para colar em cada pacote que chegou.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="text" id="search-labels" oninput="renderLabelsList()" placeholder="Filtrar etiquetas..." class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <button onclick="window.print()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl text-sm transition shadow-sm whitespace-nowrap">
+                        <i class="fa-solid fa-print mr-1.5"></i> Imprimir Etiquetas
+                    </button>
+                </div>
+            </div>
+
+            <!-- Labels Grid / Print Area -->
+            <div id="labels-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- JS Populated Labels -->
+            </div>
+        </section>
+
+        <!-- ================= TAB: OUTPUT (SAÍDA P/ MÁQUINAS) ================= -->
+        <section id="tab-output" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form / Scanner simulado -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 lg:col-span-1 space-y-4">
+                    <div class="flex items-center gap-3 border-b border-slate-700 pb-3">
+                        <div class="p-2.5 bg-indigo-600 text-white rounded-xl"><i class="fa-solid fa-industry"></i></div>
+                        <div>
+                            <h2 class="text-base font-bold text-white">Baixa de Pacote p/ Máquina</h2>
+                            <p class="text-xs text-slate-400">Bipe ou digite o código da etiqueta (ex: CHP-1001-P01).</p>
+                        </div>
+                    </div>
+
+                    <form id="form-output" onsubmit="handleOutputSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Código da Etiqueta / Pacote *</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="output-code" required placeholder="Ex: CHP-1001-P01" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono">
+                                <button type="button" onclick="quickScanModal()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-sm transition" title="Selecionar da Lista"><i class="fa-solid fa-list"></i></button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Máquina de Destino *</label>
+                            <select id="output-machine" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                <option value="Corte Naxing">Corte Naxing</option>
+                                <option value="Prismatic">Prismatic</option>
+                                <option value="Giben Nova">Giben Nova</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Operador / Responsável</label>
+                            <input type="text" id="output-operator" placeholder="Nome do operador" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Chapas Restantes (Devolução Parcial)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="output-returned" min="0" max="60" value="0" class="w-24 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 font-bold text-amber-400">
+                                <span class="text-xs text-slate-400">Chapas que sobraram e retornam ao estoque (0 se consumiu tudo)</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Observações / Ordem de Produção (OP)</label>
+                            <textarea id="output-notes" rows="2" placeholder="Ex: OP #9821 - Lote de tampos..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition text-sm shadow-md flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Confirmar Saída do Pacote
+                        </button>
+                    </form>
+                </div>
+
+                <!-- History of Outputs -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 lg:col-span-2 space-y-4">
+                    <h3 class="text-base font-bold text-white"><i class="fa-solid fa-list-check mr-2 text-indigo-400"></i>Histórico de Saídas Recentes</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="bg-slate-700/50 text-slate-400 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3 rounded-l-lg">Etiqueta / ID</th>
+                                    <th class="p-3">Material & Acabamento</th>
+                                    <th class="p-3">Dimensões</th>
+                                    <th class="p-3">Máquina</th>
+                                    <th class="p-3">Operador</th>
+                                    <th class="p-3 text-right rounded-r-lg">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="outputs-tbody" class="divide-y divide-slate-700/50">
+                                <tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhuma saída registrada.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Rodapé Customizado -->
+    <footer class="bg-slate-800 border-t border-slate-700 py-4 mt-8 text-center text-xs text-slate-400">
+        ETAPIX Estoque &copy; 2026 - Gestão Profissional de Chapas de MDF, MDP e HDF
+    </footer>
+
+    <!-- Modal: Adicionar Pacote Avulso -->
+    <div id="modal-plate" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-white" id="modal-title">Adicionar Novo Pacote Avulso</h3>
+                <button onclick="closeCustomPlateModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="form-custom-plate" onsubmit="handleCustomPlateSubmit(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
+                        <select id="custom-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                            <option value="MDP">MDP</option>
+                            <option value="MDF">MDF</option>
+                            <option value="HDF">HDF</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Acabamento</label>
+                        <select id="custom-finish" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                            <option value="Com Cor">Com Cor</option>
+                            <option value="CRU">CRU</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Nome / Padrão</label>
+                    <input type="text" id="custom-name" required placeholder="Ex: Carvalho Hanover" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Dimensões & Espessura</label>
+                    <select id="custom-dims" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                        <option value="2750 x 1850 x 15mm">2750 x 1850 x 15 mm</option>
+                        <option value="2750 x 2200 x 15mm">2750 x 2200 x 15 mm</option>
+                        <option value="2750 x 1850 x 12mm">2750 x 1850 x 12 mm</option>
+                        <option value="2750 x 1850 x 2.5mm">2750 x 1850 x 2,5 mm</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Quantidade de Chapas no Pacote</label>
+                    <input type="number" id="custom-qty" required min="1" max="100" value="50" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white">
+                </div>
+                <div class="pt-3 flex justify-end gap-2">
+                    <button type="button" onclick="closeCustomPlateModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-xl text-sm">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm">Salvar Pacote</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Selecionar Etiqueta Disponível -->
+    <div id="modal-picker" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-xl max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-white">Selecionar Pacote do Estoque</h3>
+                <button onclick="closeQuickScanModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="overflow-y-auto flex-grow">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-700/50 text-slate-400 uppercase text-xs sticky top-0">
+                        <tr>
+                            <th class="p-2.5">Código</th>
+                            <th class="p-2.5">Material</th>
+                            <th class="p-2.5">Dimensões</th>
+                            <th class="p-2.5 text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="picker-tbody" class="divide-y divide-slate-700/50">
+                        <!-- Populated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Store Structure
+        let state = {
+            plates: [
+                { id: 'CHP-1001-P01', type: 'MDF', finish: 'Com Cor', name: 'Branco TX', dims: '2750 x 1850 x 15mm', qty: 50, invoice: 'NF-3819', status: 'Disponível', date: '2026-03-01 08:30' },
+                { id: 'CHP-1001-P02', type: 'MDF', finish: 'Com Cor', name: 'Branco TX', dims: '2750 x 1850 x 15mm', qty: 50, invoice: 'NF-3819', status: 'Disponível', date: '2026-03-01 08:30' }
+            ],
+            outputs: [
+                { id: 'OUT-501', code: 'CHP-1001-P01', type: 'MDF (Com Cor)', name: 'Branco TX', dims: '2750 x 1850 x 15mm', machine: 'Corte Naxing', operator: 'Carlos Silva', date: '2026-03-02 14:20' }
+            ],
+            logs: [
+                { date: '2026-03-02 14:20', type: 'SAÍDA', desc: 'CHP-1001-P01 enviado para Corte Naxing', qty: '1 pacote', dest: 'Carlos Silva' }
+            ]
+        };
+
+        // Load state from localStorage if available
+        function loadState() {
+            const saved = localStorage.getItem('etapix_estoque_state');
+            if (saved) {
+                try { state = JSON.parse(saved); } catch(e) { console.error(e); }
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('etapix_estoque_state', JSON.stringify(state));
+        }
+
+        // Populate pack size options from 40 to 60 (1 by 1)
+        function populatePackSizes() {
+            let select = document.getElementById('entry-pack-size');
+            if (!select) return;
+            let html = '';
+            for (let i = 40; i <= 60; i++) {
+                let selected = (i === 50) ? 'selected' : '';
+                html += `<option value="${i}" ${selected}>${i} Chapas por Pacote</option>`;
+            }
+            select.innerHTML = html;
+        }
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            ['dashboard', 'inventory', 'entry', 'labels', 'output'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`btn-${t}`);
+                if (btn) {
+                    btn.classList.remove('bg-amber-600', 'text-white', 'shadow-sm');
+                    btn.classList.add('bg-slate-700', 'text-slate-300');
+                }
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-700', 'text-slate-300');
+                activeBtn.classList.add('bg-amber-600', 'text-white', 'shadow-sm');
+            }
+            if(tabId === 'inventory') renderInventory();
+            if(tabId === 'labels') renderLabelsList();
+            if(tabId === 'output') renderOutputsTable();
+            if(tabId === 'dashboard') renderDashboard();
+        }
+
+        // Render Dashboard Stats & Logs
+        function renderDashboard() {
+            let totalPlates = state.plates.reduce((acc, p) => acc + (p.status === 'Disponível' ? p.qty : 0), 0);
+            let mdpCount = state.plates.filter(p => p.type === 'MDP' && p.status === 'Disponível').reduce((a, b) => a + b.qty, 0);
+            let mdfCount = state.plates.filter(p => p.type === 'MDF' && p.status === 'Disponível').reduce((a, b) => a + b.qty, 0);
+            let hdfCount = state.plates.filter(p => p.type === 'HDF' && p.status === 'Disponível').reduce((a, b) => a + b.qty, 0);
+
+            document.getElementById('stat-total-plates').innerText = totalPlates;
+            document.getElementById('stat-types-count').innerText = `${mdpCount} / ${mdfCount} / ${hdfCount}`;
+            document.getElementById('stat-total-labels').innerText = state.plates.length;
+            document.getElementById('stat-total-outputs').innerText = state.outputs.length;
+
+            let tbody = document.getElementById('recent-logs-tbody');
+            if (state.logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Nenhuma movimentação registrada ainda.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = state.logs.slice(0, 5).map(l => `
+                <tr class="hover:bg-slate-700/20">
+                    <td class="p-3 text-xs text-slate-400">${l.date}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-md text-xs font-bold ${l.type === 'ENTRADA' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">${l.type}</span>
+                    </td>
+                    <td class="p-3 font-medium text-white">${l.desc}</td>
+                    <td class="p-3 text-amber-400 font-semibold">${l.qty}</td>
+                    <td class="p-3 text-slate-400 text-xs">${l.dest}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Render Inventory Table
+        function renderInventory() {
+            let search = document.getElementById('search-inventory').value.toLowerCase();
+            let filterType = document.getElementById('filter-type').value;
+
+            let filtered = state.plates.filter(p => {
+                let matchesSearch = p.id.toLowerCase().includes(search) || p.name.toLowerCase().includes(search) || (p.invoice && p.invoice.toLowerCase().includes(search));
+                let matchesType = !filterType || p.type === filterType;
+                return matchesSearch && matchesType;
+            });
+
+            let tbody = document.getElementById('inventory-tbody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">Nenhum pacote encontrado no estoque.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(p => `
+                <tr class="hover:bg-slate-700/20">
+                    <td class="p-3 font-mono font-medium text-amber-400">${p.id}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-700 rounded text-xs font-bold">${p.type} (${p.finish})</span></td>
+                    <td class="p-3 font-semibold text-white">${p.name}</td>
+                    <td class="p-3 text-slate-300">${p.dims}</td>
+                    <td class="p-3 font-bold ${p.qty > 0 ? 'text-emerald-400' : 'text-rose-400'}">${p.qty} chapas</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${p.status === 'Disponível' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-700 text-slate-400'}">${p.status}</span>
+                    </td>
+                    <td class="p-3 text-right space-x-2">
+                        <button onclick="switchTab('labels'); setTimeout(() => { document.getElementById('search-labels').value = '${p.id}'; renderLabelsList(); }, 100);" class="p-1.5 bg-slate-700 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-lg transition" title="Ver Etiqueta"><i class="fa-solid fa-barcode"></i></button>
+                        <button onclick="deletePlate('${p.id}')" class="p-1.5 bg-slate-700 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg transition" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Handle Carga Entry with Packet Generation (Manual 40-60 selection)
+        function handleCargaEntry(e) {
+            e.preventDefault();
+            let type = document.getElementById('entry-type').value;
+            let finish = document.getElementById('entry-finish').value;
+            let name = document.getElementById('entry-name').value;
+            let dims = document.getElementById('entry-dims').value;
+            let packSize = parseInt(document.getElementById('entry-pack-size').value);
+            let totalQty = parseInt(document.getElementById('entry-total-qty').value);
+            let invoice = document.getElementById('entry-invoice').value || 'Avulso';
+
+            if (packSize < 40 || packSize > 60) {
+                alert('O tamanho do pacote deve estar entre 40 e 60 chapas.');
+                return;
+            }
+
+            let now = new Date();
+            let dateStr = now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+            let batchCode = Math.floor(1000 + Math.random() * 9000);
+
+            let numPackages = Math.ceil(totalQty / packSize);
+            let createdCount = 0;
+
+            for (let i = 1; i <= numPackages; i++) {
+                let currentQty = (i === numPackages) ? (totalQty - (packSize * (numPackages - 1))) : packSize;
+                let packageId = `CHP-${batchCode}-P${String(i).padStart(2, '0')}`;
+
+                let newPlate = {
+                    id: packageId,
+                    type: type,
+                    finish: finish,
+                    name: name,
+                    dims: dims,
+                    qty: currentQty,
+                    invoice: invoice,
+                    status: 'Disponível',
+                    date: dateStr
+                };
+
+                state.plates.unshift(newPlate);
+                createdCount++;
+            }
+
+            state.logs.unshift({
+                date: dateStr,
+                type: 'ENTRADA',
+                desc: `Carga de ${totalQty} chapas (${type} ${finish} ${name}) dividida em ${numPackages} pacotes de ${packSize} unids`,
+                qty: `${totalQty} unids`,
+                dest: invoice
+            });
+
+            saveState();
+            alert(`Carga registrada com sucesso! Foram gerados ${numPackages} pacotes (${createdCount} etiquetas). Redirecionando para a central de etiquetas.`);
+            document.getElementById('form-entry').reset();
+            populatePackSizes();
+            switchTab('labels');
+            document.getElementById('search-labels').value = `CHP-${batchCode}`;
+            renderLabelsList();
+        }
+
+        // Render Labels List
+        function renderLabelsList() {
+            let search = document.getElementById('search-labels').value.toLowerCase();
+            let container = document.getElementById('labels-container');
+
+            let filtered = state.plates.filter(p => p.id.toLowerCase().includes(search) || p.name.toLowerCase().includes(search) || p.type.toLowerCase().includes(search));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 bg-slate-800 border border-slate-700 rounded-2xl">Nenhuma etiqueta encontrada.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(p => `
+                <div class="bg-white text-slate-900 border-2 border-slate-300 rounded-xl p-4 shadow-md flex flex-col justify-between relative page-break">
+                    <div class="flex justify-between items-start border-b border-slate-200 pb-2 mb-3">
+                        <div>
+                            <span class="px-2 py-0.5 bg-slate-900 text-white rounded text-xs font-bold">${p.type} - ${p.finish}</span>
+                            <h4 class="text-base font-bold text-slate-900 mt-1">${p.name}</h4>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-300 font-bold">${p.id}</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1 text-sm mb-4">
+                        <div class="flex justify-between"><span class="text-slate-600 font-medium">Dimensões:</span> <span class="font-bold">${p.dims}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-600 font-medium">Qtd neste Pacote:</span> <span class="font-bold text-emerald-700">${p.qty} chapas</span></div>
+                        <div class="flex justify-between"><span class="text-slate-600 font-medium">Origem/NF:</span> <span class="text-xs text-slate-500">${p.invoice}</span></div>
+                    </div>
+
+                    <!-- Simulated Barcode -->
+                    <div class="bg-slate-100 border border-slate-300 p-2 rounded text-center">
+                        <div class="font-mono tracking-widest text-lg font-bold text-slate-800">||| | |||| || | |||||</div>
+                        <div class="text-[10px] text-slate-500 font-mono">${p.id}</div>
+                    </div>
+
+                    <div class="mt-3 pt-2 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500 no-print">
+                        <span>Data: ${p.date.split(' ')[0]}</span>
+                        <button onclick="printSingleLabel('${p.id}')" class="text-amber-600 hover:text-amber-700 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-print"></i> Imprimir Esta
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function printSingleLabel(id) {
+            let p = state.plates.find(item => item.id === id);
+            if (!p) return;
+            document.getElementById('search-labels').value = p.id;
+            renderLabelsList();
+            setTimeout(() => window.print(), 200);
+        }
+
+        // Handle Output Submit (Saída p/ máquinas com devolução parcial)
+        function handleOutputSubmit(e) {
+            e.preventDefault();
+            let code = document.getElementById('output-code').value.trim();
+            let machine = document.getElementById('output-machine').value;
+            let operator = document.getElementById('output-operator').value || 'Não informado';
+            let returnedQty = parseInt(document.getElementById('output-returned').value) || 0;
+            let notes = document.getElementById('output-notes').value;
+
+            let plate = state.plates.find(p => p.id === code);
+            if (!plate) {
+                alert('Erro: Etiqueta / Código de pacote não encontrado no estoque!');
+                return;
+            }
+
+            if (plate.qty <= 0) {
+                alert('Atenção: Este pacote já está com estoque zerado!');
+                return;
+            }
+
+            let previousQty = plate.qty;
+            if (returnedQty > previousQty) {
+                alert('A quantidade devolvida não pode ser maior que a quantidade que estava no pacote!');
+                return;
+            }
+
+            plate.qty = returnedQty;
+            plate.status = returnedQty > 0 ? 'Disponível' : 'Consumido';
+
+            let now = new Date();
+            let dateStr = now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+
+            let newOutput = {
+                id: `OUT-${Math.floor(100 + Math.random() * 900)}`,
+                code: plate.id,
+                type: `${plate.type} (${plate.finish})`,
+                name: plate.name,
+                dims: plate.dims,
+                machine: machine,
+                operator: operator,
+                returned: returnedQty,
+                date: dateStr
+            };
+
+            state.outputs.unshift(newOutput);
+            state.logs.unshift({
+                date: dateStr,
+                type: 'SAÍDA',
+                desc: `Baixa de pacote (${plate.id}) para ${machine}. Devolução de ${returnedQty} chapas ao estoque.`,
+                qty: `${previousQty - returnedQty} chapas consumidas`,
+                dest: `${operator} (${notes || 'Sem OP'})`
+            });
+
+            saveState();
+            alert(`Saída registrada para ${machine}! Consumidas: ${previousQty - returnedQty} chapas. Devolvidas ao estoque: ${returnedQty} chapas.`);
+            document.getElementById('form-output').reset();
+            document.getElementById('output-returned').value = '0';
+            renderOutputsTable();
+        }
+
+        function renderOutputsTable() {
+            let tbody = document.getElementById('outputs-tbody');
+            if (state.outputs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhuma saída registrada.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = state.outputs.map(o => `
+                <tr class="hover:bg-slate-700/25">
+                    <td class="p-3 font-mono text-indigo-400 font-semibold">${o.code}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-slate-700 rounded text-xs font-bold">${o.type}</span> ${o.name}</td>
+                    <td class="p-3 text-slate-300 text-xs">${o.dims} ${o.returned > 0 ? `<br><span class="text-amber-400 font-semibold">(Devolvidas: ${o.returned})</span>` : ''}</td>
+                    <td class="p-3 font-medium text-white">${o.machine}</td>
+                    <td class="p-3 text-slate-300">${o.operator}<br><span class="text-[10px] text-slate-500">${o.date}</span></td>
+                    <td class="p-3 text-right">
+                        <button onclick="undoOutput('${o.id}')" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-xs font-medium transition flex items-center gap-1 ml-auto" title="Estornar Saída Errada">
+                            <i class="fa-solid fa-rotate-left"></i> Estornar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Undo an output operation (Estorno)
+        function undoOutput(outputId) {
+            let outputIndex = state.outputs.findIndex(o => o.id === outputId);
+            if (outputIndex === -1) return;
+            let output = state.outputs[outputIndex];
+
+            let plate = state.plates.find(p => p.id === output.code);
+            if (!plate) {
+                alert('Aviso: O pacote original desta saída não foi encontrado no estoque.');
+                state.outputs.splice(outputIndex, 1);
+                saveState();
+                renderOutputsTable();
+                return;
+            }
+
+            if (confirm(`Deseja realmente estornar a saída do pacote ${plate.id} para a máquina ${output.machine}? O estoque deste pacote será restaurado.`)) {
+                // Restore previous inventory status
+                plate.qty = output.previousQty !== undefined ? output.previousQty : (plate.qty + (output.consumed || 1));
+                plate.status = 'Disponível';
+
+                let now = new Date();
+                let dateStr = now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+
+                state.logs.unshift({
+                    date: dateStr,
+                    type: 'ESTORNO',
+                    desc: `Estorno de saída incorreta do pacote (${plate.id}) da máquina ${output.machine}`,
+                    qty: `${plate.qty} chapas ativas`,
+                    dest: 'Correção de Operação'
+                });
+
+                state.outputs.splice(outputIndex, 1);
+                saveState();
+                renderOutputsTable();
+                renderDashboard();
+                alert('Saída estornada com sucesso! O pacote retornou ao estoque com sua quantidade anterior.');
+            }
+        }
+
+        // Quick Scan Modal Picker for Outputs
+        function handleOutputSubmit(e) {
+            e.preventDefault();
+            let code = document.getElementById('output-code').value.trim();
+            let machine = document.getElementById('output-machine').value;
+            let operator = document.getElementById('output-operator').value || 'Não informado';
+            let returnedQty = parseInt(document.getElementById('output-returned').value) || 0;
+            let notes = document.getElementById('output-notes').value;
+
+            let plate = state.plates.find(p => p.id === code);
+            if (!plate) {
+                alert('Erro: Etiqueta / Código de pacote não encontrado no estoque!');
+                return;
+            }
+
+            if (plate.qty <= 0) {
+                alert('Atenção: Este pacote já está com estoque zerado!');
+                return;
+            }
+
+            let previousQty = plate.qty;
+            if (returnedQty > previousQty) {
+                alert('A quantidade devolvida não pode ser maior que a quantidade que estava no pacote!');
+                return;
+            }
+
+            let consumedCount = previousQty - returnedQty;
+            plate.qty = returnedQty;
+            plate.status = returnedQty > 0 ? 'Disponível' : 'Consumido';
+
+            let now = new Date();
+            let dateStr = now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+
+            let newOutput = {
+                id: `OUT-${Math.floor(100 + Math.random() * 900)}`,
+                code: plate.id,
+                type: `${plate.type} (${plate.finish})`,
+                name: plate.name,
+                dims: plate.dims,
+                machine: machine,
+                operator: operator,
+                returned: returnedQty,
+                consumed: consumedCount,
+                previousQty: previousQty,
+                date: dateStr
+            };
+
+            state.outputs.unshift(newOutput);
+            state.logs.unshift({
+                date: dateStr,
+                type: 'SAÍDA',
+                desc: `Baixa de pacote (${plate.id}) para ${machine}. Devolução de ${returnedQty} chapas ao estoque.`,
+                qty: `${consumedCount} chapas consumidas`,
+                dest: `${operator} (${notes || 'Sem OP'})`
+            });
+
+            saveState();
+            alert(`Saída registrada para ${machine}! Consumidas: ${consumedCount} chapas. Devolvidas ao estoque: ${returnedQty} chapas.`);
+            document.getElementById('form-output').reset();
+            document.getElementById('output-returned').value = '0';
+            renderOutputsTable();
+        }
+
+        function closeQuickScanModal() {
+            document.getElementById('modal-picker').classList.add('hidden');
+        }
+
+        function selectPickerCode(code) {
+            document.getElementById('output-code').value = code;
+            closeQuickScanModal();
+        }
+
+        // Custom Plate Modal
+        function openCustomPlateModal() {
+            document.getElementById('modal-plate').classList.remove('hidden');
+        }
+
+        function closeCustomPlateModal() {
+            document.getElementById('modal-plate').classList.add('hidden');
+        }
+
+        function handleCustomPlateSubmit(e) {
+            e.preventDefault();
+            let type = document.getElementById('custom-type').value;
+            let finish = document.getElementById('custom-finish').value;
+            let name = document.getElementById('custom-name').value;
+            let dims = document.getElementById('custom-dims').value;
+            let qty = parseInt(document.getElementById('custom-qty').value);
+
+            let now = new Date();
+            let dateStr = now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+            let newId = `CHP-${Math.floor(1000 + Math.random() * 9000)}-P01`;
+
+            state.plates.unshift({
+                id: newId,
+                type: type,
+                finish: finish,
+                name: name,
+                dims: dims,
+                qty: qty,
+                invoice: 'Avulso',
+                status: 'Disponível',
+                date: dateStr
+            });
+
+            state.logs.unshift({
+                date: dateStr,
+                type: 'ENTRADA',
+                desc: `Adição avulsa: Pacote ${newId} (${type} ${finish} ${name})`,
+                qty: `${qty} unids`,
+                dest: 'Manual'
+            });
+
+            saveState();
+            closeCustomPlateModal();
+            renderInventory();
+            alert(`Pacote avulso cadastrado com sucesso! Código: ${newId}`);
+        }
+
+        function deletePlate(id) {
+            if (confirm(`Tem certeza que deseja excluir o pacote ${id}?`)) {
+                state.plates = state.plates.filter(p => p.id !== id);
+                saveState();
+                renderInventory();
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            loadState();
+            populatePackSizes();
+            renderDashboard();
+        }
+    </script>
+</body>
+</html>
